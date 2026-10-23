@@ -26,3 +26,6 @@ MAX_FILE_SIZE = 100 * 1024 * 1024
 
 # Room
 MIN_PASSWORD = 8             # characters
+
+MAX_FRAME = 16 * 1024        # biggest message we accept on a chat link (bytes)
+CONNECT_TIMEOUT = 3          # seconds to wait when connecting to a peer
