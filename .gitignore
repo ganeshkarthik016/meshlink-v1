@@ -4,6 +4,7 @@ downloads/
 !downloads/.gitkeep
 uploads/
 !uploads/.gitkeep
+shared/
 
 
 # Python
