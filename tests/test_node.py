@@ -4,7 +4,12 @@ import time
 import pytest
 
 from p2pchat import config
-from p2pchat.comms.message import JOIN, USER
+from p2pchat.comms.message import (
+    FILE,
+    JOIN,
+    USER,
+    make_announcement,
+)
 from p2pchat.node import Node, find_my_ip
 
 
@@ -21,7 +26,7 @@ def wait_for(condition, timeout=2.0):
 
 
 @pytest.fixture
-def make_node():
+def make_node(tmp_path):
     nodes = []
 
     def make(nick, password="password1", room="lab"):
@@ -32,8 +37,10 @@ def make_node():
             password,
             ip="127.0.0.1",
             deliver=shown.append,
+            shared_dir=str(tmp_path / nick / "shared"),
+            download_dir=str(tmp_path / nick / "downloads"),
         )
-        node.start(0, udp_port=TEST_UDP_PORT)
+        node.start(0, udp_port=TEST_UDP_PORT, file_port=0)
         nodes.append(node)
         return node, shown
 
@@ -156,3 +163,87 @@ def test_join_ignores_other_rooms(make_node):
     b, _ = make_node("bob", room="lab2")
 
     assert b.join(wait=0.3) == 0
+
+
+def test_upload_register_and_download(make_node, tmp_path):
+    a, _ = make_node("alice")
+    b, _ = make_node("bob")
+
+    link(b, a)
+
+    src = tmp_path / "notes.txt"
+    src.write_bytes(b"hello files" * 10000)
+
+    a.upload(str(src))
+
+    assert wait_for(lambda: len(b.register.all()) == 1)
+
+    entry = b.register.get(1)
+    assert entry.name == "notes.txt"
+    assert entry.nick == "alice"
+
+    assert len(a.register.all()) == 1
+
+    downloaded_path = b.download(1)
+    with open(downloaded_path, "rb") as downloaded_file:
+        assert downloaded_file.read() == src.read_bytes()
+
+
+def test_reupload_replaces_the_entry(make_node, tmp_path):
+    a, _ = make_node("alice")
+    b, _ = make_node("bob")
+
+    link(b, a)
+
+    src = tmp_path / "notes.txt"
+    src.write_bytes(b"old content")
+
+    a.upload(str(src))
+
+    assert wait_for(lambda: len(b.register.all()) == 1)
+
+    src.write_bytes(b"new content!!")
+    a.upload(str(src))
+
+    assert wait_for(lambda: b.register.get(1).size == 13)
+    assert len(b.register.all()) == 1
+
+    downloaded_path = b.download(1)
+    with open(downloaded_path, "rb") as downloaded_file:
+        assert downloaded_file.read() == b"new content!!"
+
+
+def test_invalid_file_announcement_is_ignored(make_node):
+    a, _ = make_node("alice")
+    b, shown_b = make_node("bob")
+
+    link(b, a)
+
+    a.forwarder.send(
+        make_announcement(
+            FILE,
+            "alice",
+            "127.0.0.1",
+            extra={
+                "name": "x",
+                "size": 5,
+                "port": 1,
+                "sha256": "bad",
+            },
+        )
+    )
+
+    time.sleep(0.3)
+
+    assert b.register.all() == []
+    assert shown_b == []
+
+
+def test_upload_and_download_errors(make_node):
+    a, _ = make_node("alice")
+
+    with pytest.raises(ValueError):
+        a.upload("/no/such/file")
+
+    with pytest.raises(ValueError):
+        a.download(7)

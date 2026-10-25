@@ -36,3 +36,8 @@ KEEPALIVE_COUNT = 3          # missed checks before the peer is declared dead (1
 
 # Where discovery requests are sent. The second address lets nodes on the same machine find each other.
 BROADCAST_ADDRESSES = ("255.255.255.255", "127.255.255.255")
+
+MAX_NAME = 100               # longest file name we accept (characters)
+MAX_REGISTER = 500           # most files we remember
+MAX_SERVING = 8              # downloads we serve at the same time
+FILE_TIMEOUT = 30            # seconds of silence before a file transfer is dropped
