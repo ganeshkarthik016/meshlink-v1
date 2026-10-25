@@ -33,3 +33,6 @@ CONNECT_TIMEOUT = 3          # seconds to wait when connecting to a peer
 KEEPALIVE_IDLE = 15          # seconds of silence before the first check
 KEEPALIVE_INTERVAL = 10      # seconds between checks
 KEEPALIVE_COUNT = 3          # missed checks before the peer is declared dead (15 + 3x10 = 45 s)
+
+# Where discovery requests are sent. The second address lets nodes on the same machine find each other.
+BROADCAST_ADDRESSES = ("255.255.255.255", "127.255.255.255")
