@@ -29,3 +29,7 @@ MIN_PASSWORD = 8             # characters
 
 MAX_FRAME = 16 * 1024        # biggest message we accept on a chat link (bytes)
 CONNECT_TIMEOUT = 3          # seconds to wait when connecting to a peer
+
+KEEPALIVE_IDLE = 15          # seconds of silence before the first check
+KEEPALIVE_INTERVAL = 10      # seconds between checks
+KEEPALIVE_COUNT = 3          # missed checks before the peer is declared dead (15 + 3x10 = 45 s)

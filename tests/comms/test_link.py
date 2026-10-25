@@ -3,6 +3,7 @@ import threading
 
 from p2pchat import config
 from p2pchat.comms.link import Link
+import pytest
 
 
 def make_pair():
@@ -108,4 +109,16 @@ def test_real_tcp_connection():
     assert a.receive() == b"yo"
     a.close()
     b.close()
+    server.close()
+
+
+@pytest.mark.skipif(not hasattr(socket, "TCP_KEEPIDLE"), reason="Linux only")
+def test_keepalive_is_short():
+    server = socket.socket()
+    server.bind(("127.0.0.1", 0))
+    server.listen(1)
+    a = Link.connect("127.0.0.1", server.getsockname()[1])
+    idle = a.sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE)
+    assert idle == config.KEEPALIVE_IDLE
+    a.close()
     server.close()

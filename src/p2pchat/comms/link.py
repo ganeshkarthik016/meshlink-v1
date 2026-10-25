@@ -15,8 +15,11 @@ class Link:
         self.ip = ip
         self._send_lock = threading.Lock()   # several threads may send to the same peer
         try:
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)  # notice dead peers
-        except OSError:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)     # notice dead peers
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, config.KEEPALIVE_IDLE)
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, config.KEEPALIVE_INTERVAL)
+            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, config.KEEPALIVE_COUNT)
+        except (OSError, AttributeError):    # these options are Linux-only; others skip them
             pass
 
     @classmethod
