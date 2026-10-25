@@ -25,6 +25,10 @@ class PeerTable:
         with self._lock:
             return any(link.ip == ip for link in self._peers)
 
+    def ips(self) -> list[str]:
+        with self._lock:
+            return [link.ip for link in self._peers]
+
     def can_accept(self) -> bool:
         """True if we still have room for someone connecting to us.
         (Discovery uses this: a full node does not answer broadcasts.)"""
