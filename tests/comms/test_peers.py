@@ -105,6 +105,7 @@ def test_has_ip(make_table):
     b.connect_to("127.0.0.1", a.port)
     assert b.has_ip("127.0.0.1")
     assert not b.has_ip("10.0.0.9")
+    assert b.ips() == ["127.0.0.1"]
 
 
 def test_connect_to_nothing_returns_false(make_table):
