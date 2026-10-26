@@ -4,6 +4,8 @@ import pytest
 
 from p2pchat.discovery.broadcaster import find_peers
 from p2pchat.discovery.listener import Listener
+from p2pchat import config
+from p2pchat.discovery.broadcaster import broadcast_targets
 
 UDP = 50991                  # not the real port, so tests never clash with a running app
 ROOM = b"ROOM-AAA"           # IDs must be exactly 8 bytes
@@ -30,7 +32,9 @@ def start_listener():
 def test_listener_answers_same_room(start_listener):
     start_listener(N1, 5555)
     found = find_peers(ROOM, N2, UDP, wait=1)
-    assert found == [("127.0.0.1", 5555)]        # asked twice, answered twice, counted once
+    # Reachable on 127.0.0.1 and on our network IP: either is fine, so check the port.
+    # Asked twice, answered several times, counted once.
+    assert [port for _, port in found] == [5555]
 
 
 def test_other_room_gets_no_answer(start_listener):
@@ -66,4 +70,11 @@ def test_garbage_does_not_break_the_listener(start_listener):
     s.sendto(b"junk", ("127.0.0.1", UDP))
     s.sendto(b"x" * 20, ("127.0.0.1", UDP))
     s.close()
-    assert find_peers(ROOM, N2, UDP, wait=1) == [("127.0.0.1", 5555)]
+    found = find_peers(ROOM, N2, UDP, wait=1)
+    assert [port for _, port in found] == [5555]
+
+def test_broadcast_targets_keep_the_defaults_and_are_valid_ips():
+    targets = broadcast_targets()
+    assert set(config.BROADCAST_ADDRESSES) <= set(targets)
+    for address in targets:
+        socket.inet_aton(address)        # raises if it is not an IPv4 address
