@@ -1,7 +1,10 @@
 """Shouts "is anyone from my room here?" and collects the answers."""
 import socket
 import time
-import fcntl
+try:
+    import fcntl                 # Linux only
+except ImportError:              # Windows
+    fcntl = None
 import struct
 
 from p2pchat import config
@@ -12,6 +15,8 @@ def broadcast_targets() -> list[str]:
     address of each network card (so a laptop with Ethernet AND a hotspot
     reaches both networks)."""
     targets = list(config.BROADCAST_ADDRESSES)
+    if fcntl is None:
+        return targets           # no per-network-card addresses on this system
     for _, name in socket.if_nameindex():
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
